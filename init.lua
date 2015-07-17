@@ -32,7 +32,8 @@ local metric_mapping = {
   ['system.disk.write_bytes.total'] = 'DISK_WRITE_BYTES_TOTAL',
   ['system.disk.write_bytes'] = 'DISK_WRITE_BYTES',
   ['system.disk.ios'] = 'DISK_IOS',
-  ['system.fs.use_percent'] = 'DISK_USE_PERCENT'
+  ['system.fs.use_percent'] = 'DISK_USE_PERCENT',
+  ['system.fs.use_percent.total'] = 'DISK_USE_PERCENT'
 }
 
 local ds = MeterDataSource:new()
