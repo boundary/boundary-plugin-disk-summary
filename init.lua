@@ -45,6 +45,8 @@ end
 local function matchItem(item, dir, dev)
   item.dir = item.dir and string.lower(trim(item.dir))
   item.device = item.device and string.lower(trim(item.device))
+  dir = dir and string.lower(trim(dir))
+  dev = dev and string.lower(trim(dev))
   return (item.dir == dir and item.device == dev) or (item.dir and (not item.device or item.device == "") and item.dir == dir) or ((not item.dir or item.dir == "") and item.device and item.device == dev)
 end
 

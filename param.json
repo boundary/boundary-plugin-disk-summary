@@ -2,7 +2,7 @@
   "items": [
     {
       "diskname" : "Root Disk",
-      "device" : " /Dev/sda1 ",
+      "device" : "c:\\",
       "dir" : ""
     },
     {
