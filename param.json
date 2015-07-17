@@ -1,0 +1,13 @@
+{
+  "items": [
+    {
+      "diskname": "Root Disk",
+      "dir": "/"
+    },
+    {
+      "diskname": "temp",
+      "dir": "/tmp"
+    }
+  ],
+  "pollInterval": 1000
+}

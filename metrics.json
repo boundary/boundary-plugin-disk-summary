@@ -1,0 +1,83 @@
+{
+  "DISK_READS_TOTAL" : {
+    "displayName": "Total Disk Reads",
+    "description": "The total number of disk reads at the moment",
+    "unit": "number",
+    "displayNameShort": "Total Reads",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_READ_BYTES_TOTAL" : {
+    "displayName": "Total Disk Read Bytes",
+    "description": "The total number of bytes read from disks at the moment",
+    "unit": "bytecount",
+    "displayNameShort": "Total Read Bytes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_WRITES_TOTAL" : {
+    "displayName": "Total Disk Writes",
+    "description": "The total number of disk writes at the moment",
+    "unit": "number",
+    "displayNameShort": "Total Writes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_WRITE_BYTES_TOTAL" : {
+    "displayName": "Total Disk Write Bytes",
+    "description": "The total number of bytes written to disks at the moment",
+    "unit": "bytecount",
+    "displayNameShort": "Total Write Bytes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_READS" : {
+    "displayName": "Disk Reads",
+    "description": "The number of reads from the disk at the moment",
+    "unit": "number",
+    "displayNameShort": "Reads",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_READ_BYTES" : {
+    "displayName": "Disk Read Bytes",
+    "description": "The number of bytes read from the disk at the moment",
+    "unit": "bytecount",
+    "displayNameShort": "Read Bytes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_WRITES" : {
+    "displayName": "Disk Writes",
+    "description": "The number of writes to the disk at the moment",
+    "unit": "number",
+    "displayNameShort": "Writes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_WRITE_BYTES" : {
+    "displayName": "Disk Write Bytes",
+    "description": "The number of bytes written to the disk at the moment",
+    "unit": "bytecount",
+    "displayNameShort": "Write Bytes",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  },
+  "DISK_IOS" : {
+    "displayName": "Disk IOs",
+    "description": "The number of IO per second to the disk at the moment",
+    "unit": "number",
+    "displayNameShort": "IOs",
+    "defaultResolutionMS": 0,
+    "isDisabled": 0,
+    "defaultAggregate": "avg"
+  }
+}
