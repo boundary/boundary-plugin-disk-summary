@@ -1,10 +1,10 @@
 {
-  "name" : "Boundary Disk Use Summary",
+  "name" : "Boundary Disk Summary",
   "version" : "0.9.1",
   "meterVersionRequired" : "4.2.0-611",
   "unsupportedPlatforms" : [ ],
   "tags" : "disk,meter",
-  "description" : "Scans the given device mount paths and reports the percent of disk used",
+  "description" : "Scans the given device mount paths and reports the percent of disk used and various disk metrics",
   "icon" : "icon.png",
   "command" : "boundary-meter init.lua",
   "command_lua" : "boundary-meter init.lua",
@@ -20,11 +20,12 @@
     "DISK_WRITES",
     "DISK_READ_BYTES",
     "DISK_WRITE_BYTES",
-    "DISK_IOS"
+    "DISK_IOS",
+    "DISK_USE_PERCENT"
   ],
   "dashboards" : [ 
     {
-      "name" : "Disk Read/Write Summary",
+      "name" : "Disk Summary",
       "layout" : "d-w=2&d-h=3&d-pad=5&d-bg=none&d-g-DISK_READ_BYTES_TOTAL=0-1-1-1-t&d-g-DISK_WRITE_BYTES_TOTAL=0-1-1-1-b&d-g-DISK_READS_TOTAL=0-0-1-1-t&d-g-DISK_WRITES_TOTAL=0-0-1-1-b&d-g-DISK_IOS=0-2-1-1&d-sg-hdr=1-0-1-1-t&d-sg-hdw=1-0-1-1-b&d-g-DISK_READ_BYTES=1-1-1-1-t&d-g-DISK_WRITE_BYTES=1-1-1-1-b"
     }
   ],
@@ -33,21 +34,21 @@
     {
       "title" : "Disk Name",
       "name" : "diskname",
-      "description" : "The name of the disk to be appended to the hostname to display in the legend for the Disk Use Summary data.",
+      "description" : "The name of the disk to be appended to the hostname to display in the legend for the Disk Summary data.",
       "type" : "string",
       "required" : true
     },
     {
       "title" : "Mount Point",
       "name" : "dir",
-      "description" : "The mounted point to check for free space. (either this or the Mounted device need to be set for the plugin to function properly)",
+      "description" : "The mounted point to check for free space and other metrics. (either this or the Mounted device need to be set for the plugin to function properly)",
       "type" : "string",
       "required" : false
     },
     {
       "title" : "Device",
       "name" : "device",
-      "description" : "The mounted device to check for free space. (either this or the Mount Point directory need to be set for the plugin to function properly)",
+      "description" : "The mounted device to check for free space and other metrics. (either this or the Mount Point directory need to be set for the plugin to function properly)",
       "type" : "string",
       "required" : false
     }
