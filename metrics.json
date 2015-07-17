@@ -79,5 +79,14 @@
     "defaultResolutionMS": 0,
     "isDisabled": 0,
     "defaultAggregate": "avg"
+  },
+  "DISK_USE_PERCENT": {
+    "defaultAggregate": "MAX",
+    "defaultResolutionMS": 1000,
+    "description": "For the configured disks, reports the highest used disk percent capacity",
+    "displayName": "Disk use percent",
+    "displayNameShort": "Disk use",
+    "isDisabled" : 0,
+    "unit": "percent"
   }
 }
