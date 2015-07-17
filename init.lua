@@ -40,6 +40,10 @@ function ds:onFetch(socket)
   socket:write(self:queryMetricCommand({match = "(system.disk.*|system.fs.use_percent)"}))
 end
 
+local function matchItem(item, dir, dev)
+  return (item.dir == dir and item.device == dev) or (item.dir and (not item.device or item.device == "") and item.dir == dir) or ((not item.dir or item.dir == "") and item.device and item.device == dev)
+end
+
 local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {}
@@ -54,7 +58,7 @@ function plugin:onParseValues(data)
         dir = urldecode(dir)
         dev = urldecode(dev)
         for _, item in ipairs(params.items) do
-          if (item.dir == dir and item.device == dev) or (item.dir and (not item.device or item.device == "") and item.dir == dir) or ((not item.dir or item.dir == "") and item.device and item.device == dev) then
+          if matchItem(item, dir, dev) then
             local source = self.source .. '.' .. (item.diskname or dir .. '.' .. dev) 
             table.insert(result, pack(boundary_metric, v.value, v.timestamp, source))
             break
