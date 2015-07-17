@@ -43,8 +43,8 @@ function ds:onFetch(socket)
 end
 
 local function matchItem(item, dir, dev)
-  item.dir = item.dir and trim(item.dir)
-  item.device = item.device and trim(item.device)
+  item.dir = item.dir and string.lower(trim(item.dir))
+  item.device = item.device and string.lower(trim(item.device))
   return (item.dir == dir and item.device == dev) or (item.dir and (not item.device or item.device == "") and item.dir == dir) or ((not item.dir or item.dir == "") and item.device and item.device == dev)
 end
 
