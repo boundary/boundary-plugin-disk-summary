@@ -12,10 +12,10 @@
   "postExtract_lua" : "",
   "ignore" : "",
   "metrics" : [
-    "DISK_READS_TOTAL",
-    "DISK_WRITES_TOTAL",
     "DISK_READ_BYTES_TOTAL",
     "DISK_WRITE_BYTES_TOTAL",
+    "DISK_READS_TOTAL",
+    "DISK_WRITES_TOTAL",
     "DISK_READS",
     "DISK_WRITES",
     "DISK_READ_BYTES",
@@ -26,7 +26,7 @@
   "dashboards" : [ 
     {
       "name" : "Disk Summary",
-      "layout" : "d-w=2&d-h=3&d-pad=5&d-bg=none&d-g-DISK_READ_BYTES_TOTAL=0-1-1-1-t&d-g-DISK_WRITE_BYTES_TOTAL=0-1-1-1-b&d-g-DISK_READS_TOTAL=0-0-1-1-t&d-g-DISK_WRITES_TOTAL=0-0-1-1-b&d-g-DISK_IOS=0-2-1-1&d-sg-hdr=1-0-1-1-t&d-sg-hdw=1-0-1-1-b&d-g-DISK_READ_BYTES=1-1-1-1-t&d-g-DISK_WRITE_BYTES=1-1-1-1-b"
+      "layout" : "d-w=4&d-h=2&d-pad=5&d-bg=none&d-g-DISK_READ_BYTES_TOTAL=0-0-1-1-t&d-g-DISK_WRITE_BYTES_TOTAL=0-0-1-1-b&d-g-DISK_READS_TOTAL=1-0-1-1-t&d-g-DISK_WRITES_TOTAL=1-0-1-1-b&d-g-DISK_READS=2-0-1-1&d-g-DISK_WRITES=3-0-1-1&d-g-DISK_READ_BYTES=0-1-1-1&d-g-DISK_WRITE_BYTES=1-1-1-1&d-g-DISK_IOS=2-1-1-1&d-g-DISK_USE_PERCENT=3-1-1-1"
     }
   ],
   "paramArray" : { "itemTitle" : ["diskname", "dir", "device"], "schemaTitle" : "Endpoint"},
