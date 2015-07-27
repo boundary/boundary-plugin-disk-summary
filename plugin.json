@@ -31,14 +31,7 @@
   ],
   "paramArray" : { "itemTitle" : ["diskname", "dir", "device"], "schemaTitle" : "Endpoint"},
   "paramSchema" : [
-    {
-      "title" : "Disk Name",
-      "name" : "diskname",
-      "description" : "The name of the disk to be appended to the hostname to display in the legend for the Disk Summary data.",
-      "type" : "string",
-      "required" : true
-    },
-    {
+   {
       "title" : "Mount Point",
       "name" : "dir",
       "description" : "The mounted point to check for free space and other metrics. (either this or the Mounted device need to be set for the plugin to function properly)",
@@ -51,6 +44,13 @@
       "description" : "The mounted device to check for free space and other metrics. (either this or the Mount Point directory need to be set for the plugin to function properly)",
       "type" : "string",
       "required" : false
+    },
+    {
+      "title" : "Source",
+      "name" : "diskname",
+      "description" : "The name of the disk to be appended to the hostname to display in the legend for the Disk Summary data.",
+      "type" : "string",
+      "required" : true
     }
   ]
 }
