@@ -34,7 +34,7 @@
    {
       "title" : "Mount Point",
       "name" : "dir",
-      "description" : "The mounted point (on Linux) to check for free space and other metrics. (either this or the Mounted device need to be set for the plugin to function properly)",
+      "description" : "The mounted point (on Linux) to check for free space and other metrics. (either this or the Mounted device need to be set for the plugin to function properly). NOTE: Leave empty on Windows.",
       "type" : "string",
       "required" : false
     },
