@@ -15,9 +15,8 @@
 local framework = require('framework')
 local Plugin = framework.Plugin
 local MeterDataSource = framework.MeterDataSource
-local isEmpty = framework.string.isEmpty
 local urldecode = framework.string.urldecode
-local pack = framework.util.pack
+local ipack = framework.util.ipack
 local trim = framework.string.trim
 
 local params = framework.params
@@ -53,7 +52,7 @@ end
 local plugin = Plugin:new(params, ds)
 function plugin:onParseValues(data)
   local result = {}
-  for i, v in ipairs(data) do
+  for _, v in ipairs(data) do
     local metric, rest  = string.match(v.metric, '([^|]+)|?(.*)')
     local boundary_metric = metric_mapping[metric]  
     if boundary_metric then
@@ -66,7 +65,7 @@ function plugin:onParseValues(data)
         for _, item in ipairs(params.items) do
           if matchItem(item, dir, dev) then
             local source = self.source .. '.' .. (item.diskname or dir .. '.' .. dev) 
-            table.insert(result, pack(boundary_metric, v.value, v.timestamp, source))
+            ipack(result, boundary_metric, v.value, v.timestamp, source)
             break
           end
         end
