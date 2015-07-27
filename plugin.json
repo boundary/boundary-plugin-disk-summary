@@ -4,7 +4,7 @@
   "meterVersionRequired" : "4.2.0-611",
   "unsupportedPlatforms" : [ ],
   "tags" : "disk,meter",
-  "description" : "Scans the given device mount paths and reports the percent of disk used and various disk metrics",
+  "description" : "Scans the given device or drive and reports the percent of disk used and various disk metrics",
   "icon" : "icon.png",
   "command" : "boundary-meter init.lua",
   "command_lua" : "boundary-meter init.lua",
