@@ -21,12 +21,12 @@ None
 
 ### Plugin Configuration Fields
 
-|Field Name|Description                                       |
+|Field Name|Description                                       
 |:----------|:------------------------------------------------|
-|Disk Name  |The name of the disk to be appended to the hostname to display in the legend for the Disk Summary data."|
-|Mount Point|The mounted point to check for free space. (either this or the Mounted device need to be set for the plugin to function properly)|
-|Device     |The mounted device to check for free space. (either this or the Mount Point directory need to be set for the plugin to function properly)|
-|Poll Interval | How often to poll for metrics |
+| Mount Point | The mounted point to check for free space. (either this or the Mounted device need to be set for the plugin to function properly)|
+| Device/Drive  |The mounted device (on Linux) or drive (on Windows) to check for free space. (either this or the Mount Point directory need to be set for the plugin to function properly)|
+| Poll Interval | How often to poll for metrics |
+| Source  | Some alias to be appended to the hostname to display in the legend for the data.|
 
 ### Metrics Collected
 
