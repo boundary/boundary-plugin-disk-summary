@@ -80,7 +80,7 @@
     "isDisabled": 0,
     "defaultAggregate": "avg"
   },
-  "DISK_USE_PERCENT": {
+  "DISKUSE_SUMMARY": {
     "defaultAggregate": "MAX",
     "defaultResolutionMS": 1000,
     "description": "For the configured disks, reports the highest used disk percent capacity",
