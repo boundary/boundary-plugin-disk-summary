@@ -41,8 +41,20 @@ local querystring = require('querystring')
 local boundary = require('boundary')
 local io = require('io')
 local hrtime = require('uv').Process.hrtime
+local utils = require('utils')
 
-framework.version = '0.9.5'
+local callable = function (class, func)
+  class.meta.__call = func 
+end
+
+local factory = function (class)
+  local mt = getmetatable(class)
+  mt.__call = function (t, ...)
+    return t:new(...)
+  end
+end
+
+framework.version = '0.11.0'
 framework.boundary = boundary
 framework.params = boundary.param or json.parse(fs.readFileSync('param.json')) or {}
 framework.plugin_params = boundary.plugin or json.parse(fs.readFileSync('plugin.json')) or {}
@@ -55,79 +67,130 @@ framework.table = {}
 framework.util = {}
 framework.http = {}
 
--- Remove this when we migrate to luvit 2.0.x
-function framework.util.parseUrl(url, parseQueryString)
-  assert(url, 'parse expect a non-nil value')
-  local href = url
-  local chunk, protocol = url:match("^(([a-z0-9+]+)://)")
-  url = url:sub((chunk and #chunk or 0) + 1)
-
-  local auth
-  chunk, auth = url:match('(([0-9a-zA-Z]+:?[0-9a-zA-Z]+)@)')
-  url = url:sub((chunk and #chunk or 0) + 1)
-
-  local host
-  local hostname
-  local port
-  if protocol then
-    host = url:match("^([%a%.%d-]+:?%d*)")
-    if host then
-      hostname = host:match("^([^:/]+)")
-      port = host:match(":(%d+)$")
-    end
-  url = url:sub((host and #host or 0) + 1)
-  end
-
-  host = hostname -- Just to be compatible with our code base. Discuss this.
-
-  local path
-  local pathname
-  local search
-  local query
-  local hash
-  hash = url:match("(#.*)$")
-  url = url:sub(1, (#url - (hash and #hash or 0)))
-
-  if url ~= '' then
-    path = url
-    local temp
-    temp = url:match("^[^?]*")
-    if temp ~= '' then
-      pathname = temp
-    end
-    temp = url:sub((pathname and #pathname or 0) + 1)
-    if temp ~= '' then
-      search = temp
-    end
-    if search then
-    temp = search:sub(2)
-      if temp ~= '' then
-        query = temp
-      end
-    end
-  end
-
-  if parseQueryString then
-    query = querystring.parse(query)
-  end
-
-  return {
-    href = href,
-    protocol = protocol,
-    host = host,
-    hostname = hostname,
-    port = port,
-    path = path or '/',
-    pathname = pathname or '/',
-    search = search,
-    query = query,
-    auth = auth,
-    hash = hash
-  }
+local EventTracker = Object:extend()
+function EventTracker:initialize(delay)
+  self.delay = delay or 5 * 60
+  self.events = {}
 end
 
-_url.parse = framework.util.parseUrl
+function EventTracker:hash(event)
+  return string.format("%s_%s_%s", event.type, event.msg, event.source)
+end
 
+function EventTracker:track(event)
+  local hash = self:hash(event)
+  local time = os.time() + self.delay 
+  self.events[hash] = time  
+end
+
+function EventTracker:canEmit(event, time)
+  local hash = self:hash(event)
+  local next_time = self.events[hash]
+  local result = (not next_time) or next_time <= time
+  return result
+end
+
+local Logger = Object:extend()
+Logger.CRITICAL = 50
+Logger.ERROR = 40
+Logger.WARNING = 30
+Logger.INFO = 20
+Logger.DEBUG = 10
+Logger.NOTSET = 60
+
+Logger.level_map = {
+  critical = Logger.CRITICAL,
+  error = Logger.ERROR,
+  warning = Logger.WARNING,
+  info = Logger.INFO,
+  debug = Logger.DEBUG,
+  notset = Logger.NOTSET
+}
+
+function Logger.parseLevel(level)
+  return tonumber(level) or Logger.level_map[level] or Logger.NOTSET
+end
+
+function Logger:initialize(stream, level)
+  self.out = stream
+  self.levels = {}
+  self.levels[Logger.CRITICAL] = self.critical
+  self.levels[Logger.ERROR] = self.error
+  self.levels[Logger.WARNING] = self.warning
+  self.levels[Logger.INFO] = self.info
+  self.levels[Logger.DEBUG] = self.debug
+  self:setLevel(level)
+end
+
+function Logger:isEnabledFor(level)
+  return level >= self.level 
+end
+
+function Logger:setLevel(level)
+  self.level = level or Logger.NOTSET
+end
+
+function Logger:getLevel()
+  return self.level
+end
+
+function Logger:dump(args)
+  return args and utils.dump(args, nil, true) or ''
+end
+
+function Logger:write(level_string, message, args)
+  local formatted = ('%s:\t%s %s\n'):format(level_string, message, self:dump(args))
+  self.out:write(formatted)
+end
+
+function Logger:info(message, args)
+  if self:isEnabledFor(Logger.INFO) then
+    self:write('INFO', message, args) 
+  end
+end
+
+function Logger:warning(message, args)
+  if self:isEnabledFor(Logger.WARNING) then
+    self:write('WARNING', message, args)
+  end
+end
+
+function Logger:debug(message, args)
+  if self:isEnabledFor(Logger.DEBUG) then
+    self:write('DEBUG', message, args)
+  end
+end
+
+function Logger:error(message, args)
+  if self:isEnabledFor(Logger.ERROR) then
+    self:write('ERROR', message, args)
+  end
+end
+
+function Logger:critical(message, args)
+  if self:isEnabledFor(Logger.CRITICAL) then
+    self:write('CRITICAL', message, args)
+  end
+end
+
+function Logger:exception(message, args)
+  if self:isEnabledFor(Logger.ERROR) then
+    self:write('ERROR', message, args)   
+  end
+end
+
+function Logger:log(level, message, args)
+  local func = self.levels[level]
+  if func and self:isEnabledFor(level) then
+    func(self, message, args)
+  end
+end
+
+framework.Logger = Logger
+
+local function getDefaultLogger(level)
+  return Logger:new(process.stderr, Logger.parseLevel(level))
+end
 
 do
   local encode_alphabet = {
@@ -323,6 +386,78 @@ function framework.string.trim(self)
 end
 local trim = framework.string.trim
 
+function framework.util.parseUrl(url, parseQueryString)
+  assert(url, 'parse expect a non-nil value')
+  url = trim(url)
+  local href = url
+  local chunk, protocol = url:match("^(([a-zA-Z0-9+]+)://)")
+  url = url:sub((chunk and #chunk or 0) + 1)
+
+  local auth
+  chunk, auth = url:match('(([0-9a-zA-Z]+:?[0-9a-zA-Z]+)@)')
+  url = url:sub((chunk and #chunk or 0) + 1)
+
+  local host
+  local hostname
+  local port
+  if protocol then
+    host = url:match("^([%a%.%d-]+:?%d*)")
+    if host then
+      hostname = host:match("^([^:/]+)")
+      port = host:match(":(%d+)$")
+    end
+  url = url:sub((host and #host or 0) + 1)
+  end
+
+  host = hostname -- Just to be compatible with our code base. Discuss this.
+
+  local path
+  local pathname
+  local search
+  local query
+  local hash
+  hash = url:match("(#.*)$")
+  url = url:sub(1, (#url - (hash and #hash or 0)))
+
+  if url ~= '' then
+    path = url
+    local temp
+    temp = url:match("^[^?]*")
+    if temp ~= '' then
+      pathname = temp
+    end
+    temp = url:sub((pathname and #pathname or 0) + 1)
+    if temp ~= '' then
+      search = temp
+    end
+    if search then
+    temp = search:sub(2)
+      if temp ~= '' then
+        query = temp
+      end
+    end
+  end
+
+  if parseQueryString then
+    query = querystring.parse(query)
+  end
+
+  return {
+    href = href,
+    protocol = protocol,
+    host = host,
+    hostname = hostname,
+    port = port,
+    pathname = pathname or '/',
+    search = search,
+    query = query,
+    auth = auth,
+    hash = hash
+  }
+end
+
+_url.parse = framework.util.parseUrl
+
 --- Returns the char from a string at the specified position. 
 -- @param str the string from were a char will be extracted. 
 -- @param pos the position in the string. Should be a numeric value greater or equal than 1.
@@ -512,7 +647,7 @@ end
 -- @param link the link to check
 -- @return true if the link is relative.  false otherwise.
 function framework.util.isRelativeLink(link)
-  return not string.match(link, '^https?')
+  return not string.match(string.lower(link), '^https?')
 end
 
 --- Wraps a function to calculate the time passed between the wrap and the function execution.
@@ -528,6 +663,13 @@ end
 -- @return true if status code is a success one.
 function framework.util.isHttpSuccess(status)
   return status >= 200 and status < 300
+end
+
+-- Check if an HTTP Status code is of a redirect kind.
+-- @param status the status code number
+-- @return true if status code is a redirect one.
+function framework.util.isHttpRedirect(status)
+  return status >= 300 and status < 400 
 end
 
 --- Round a number by the to the specified decimal places.
@@ -706,7 +848,7 @@ function framework.util.mean(t)
   if count == 0 then
     return 0
   end
-  local s = sum(add, 0, t) 
+  local s = sum(t) 
   return s/count
 end
 
@@ -873,6 +1015,7 @@ exportable(framework.http)
 -- Work as a cache of values
 -- @type Cache
 local Cache = Object:extend()
+factory(Cache, factory)
 
 --- Cache constructor.
 -- @name Cache:new
@@ -970,6 +1113,7 @@ function CachedDataSource:initialize(ds, refresh_by)
   self.refresh_by = refresh_by
   self.expiration = nil
   ds:propagate('error', self)
+  ds:propagate('info', self)
 end
 
 --- Fetch from the provided DataSource or return the cached value
@@ -1014,7 +1158,7 @@ function NetDataSource:fetch(context, callback)
     self:onFetch(self.socket)
     if callback then
       self.socket:once('data', function (data)
-        callback(data)
+        callback(data, {context = self})
         if self.close_connection then
           self:disconnect()
         end
@@ -1051,6 +1195,7 @@ framework.NetDataSource = NetDataSource
 --- DataSourcePoller class
 -- @type DataSourcePoller
 local DataSourcePoller = Emitter:extend()
+factory(DataSourcePoller)
 
 --- DataSourcePoller constructor.
 -- DataSourcePoller Polls a DataSource at the specified interval and calls a callback when there is some data available.
@@ -1061,16 +1206,22 @@ function DataSourcePoller:initialize(pollInterval, dataSource)
   self.pollInterval = (pollInterval < 1000 and 1000) or pollInterval
   self.dataSource = dataSource
   dataSource:propagate('error', self)
+  dataSource:propagate('info', self)
 end
 
 function DataSourcePoller:_poll(callback)
   local success, err = pcall(function () 
-    self.dataSource:fetch(self, callback)
+    self.dataSource:fetch(self, function(...)
+      -- capture the fetch result and then schedule the next poll.
+      -- This eliminates the possibility of getting called before finishing
+      callback(...)
+      timer.setTimeout(self.pollInterval, function () self:_poll(callback) end)
+    end)
   end)
   if not success then
     self:emit('error', err) 
+    timer.setTimeout(self.pollInterval, function () self:_poll(callback) end)
   end
-  timer.setTimeout(self.pollInterval, function () self:_poll(callback) end)
 end
 
 --- Start polling for data.
@@ -1088,6 +1239,7 @@ end
 -- @type Plugin
 local Plugin = Emitter:extend()
 framework.Plugin = Plugin
+factory(Plugin)
 
 --- Plugin constructor.
 -- A base plugin implementation that accept a dataSource and polls periodically for new data and format the output so the boundary meter can collect the metrics.
@@ -1108,9 +1260,11 @@ function Plugin:initialize(params, dataSource)
   if not Plugin:_isPoller(dataSource) then
     self.dataSource = DataSourcePoller:new(pollInterval, dataSource)
     self.dataSource:propagate('error', self)
+    self.dataSource:propagate('info', self)
   else
     self.dataSource = dataSource
     dataSource:propagate('error', self)
+    dataSource:propagate('info', self)
   end
   self.source = notEmpty(params.source, os.hostname())
   if (plugin_params) then
@@ -1123,7 +1277,10 @@ function Plugin:initialize(params, dataSource)
     self.tags = notEmpty(params.tags, '')
   end
 
+  self.event_tracker = EventTracker:new()
+
   self:on('error', function (err) self:error(err) end)
+  self:on('info', function (obj) self:info(obj) end)
 end
 
 function Plugin:printError(title, host, source, msg)
@@ -1143,11 +1300,23 @@ function Plugin:printCritical(title, host, source, msg)
 end
 
 function Plugin.formatMessage(name, version, title, host, source, msg)
-  if title and title ~= "" then title = '-'..title else title = "" end
+  local ver = '';
+  local nm ='';
+  if name and name ~= "" then
+    nm = name;
+  end
+  if version and version ~= "" then
+    ver = ' version '..version
+  end
+  if (nm == '' and ver == '') then
+    if title and title ~= "" then title = title else title = "" end
+  else
+    if title and title ~= "" then title = '-'..title else title = "" end
+  end
   if msg and msg ~= "" then msg = '|m:'..msg else msg = "" end
   if host and host ~= "" then host = '|h:'..host else host = "" end
   if source and source ~= "" then source = '|s:'..source else source = "" end
-  return string.format('%s version %s%s%s%s%s', name, version, title, msg, host, source)
+  return string.format('%s%s%s%s%s%s', nm, ver, title, msg, host, source)
 end
 
 function Plugin.formatTags(tags)
@@ -1175,18 +1344,36 @@ function Plugin:_isPoller(poller)
   return poller.run
 end
 
+function Plugin:handleEvent(eventType, obj)
+  local msg
+  if type(obj) == 'table' and obj.message then
+    msg = obj.message
+  else
+    msg = tostring(obj)
+  end
+  local source = obj.source or self.source
+  
+  local event = {type = eventType, source = source, msg = msg}
+  if self.event_tracker:canEmit(event, os.time()) then
+    self.event_tracker:track(event)
+    if eventType == 'error' then
+      self:printError(self.source .. ' Error', self.source, source, msg)
+    else
+      self:printInfo(self.source .. ' Info', self.source, source, msg)
+    end
+  end
+end
+
 --- Called when the Plugin detect and error in one of his components.
 -- @param err the error emitted by one of the component that failed.
-function Plugin:error(err)
-  err = self:onError(err)
-  local msg
-  if type(err) == 'table' and err.message then
-    msg = err.message
-  else
-    msg = tostring(err)
-  end
-  local source = err.source or self.source
-  self:printError(self.source .. ' Error', self.source, source, msg)
+function Plugin:error(obj)
+  obj = self:onError(obj)
+  self:handleEvent('error', obj)
+end
+
+function Plugin:info(obj)
+  
+  self:handleEvent('info', obj)
 end
 
 function Plugin:onError(err)
@@ -1272,6 +1459,7 @@ end
 --- Acumulator Class
 -- @type Accumulator
 local Accumulator = Emitter:extend()
+factory(Accumulator)
 
 --- Accumulator constructor.
 -- Track values and return the delta for accumulated metrics.
@@ -1316,15 +1504,14 @@ function Accumulator:resetAll()
 end
 
 -- The object instance can be used as a function call that calls accumulate.
-Accumulator.meta.__call = function (t, ...) 
-  return t:accumulate(...)  
-end
+callable(Accumulator, function (t, ...) return t:accumulate(...) end)
 
 framework.Accumulator = Accumulator
 
 --- A Collection of DataSourcePoller
 -- @type PollerCollection
 local PollerCollection = Emitter:extend()
+factory(PollerCollection)
 
 --- PollerCollection constructor
 -- @param[opt] pollers a list of poller to initially add to this collection.
@@ -1371,6 +1558,9 @@ function WebRequestDataSource:initialize(params)
 
   self.options = options
   self.info = options.meta
+  self.follow_redirects = options.follow_redirects
+  self.max_redirects = options.max_redirects or 5
+  self.logger = getDefaultLogger(params.debug_level)
 end
 
 function WebRequestDataSource:onError(...)
@@ -1378,7 +1568,9 @@ function WebRequestDataSource:onError(...)
 end
 
 --- Fetch data from the initialized url
+local isHttpRedirect = framework.util.isHttpRedirect
 function WebRequestDataSource:fetch(context, callback, params)
+  self.logger:info('WebRequestDataSource:fetch()')
   assert(callback, 'WebRequestDataSource:fetch: callback is required')
 
   local start_time = hrtime()
@@ -1394,11 +1586,12 @@ function WebRequestDataSource:fetch(context, callback, params)
   local buffer = ''
 
   local success = function (res)
-    if self.wait_for_end then
+    if self.wait_for_end or isHttpRedirect(res.statusCode) then
       res:on('end', function ()
         local exec_time = hrtime() - start_time
         success, error = pcall(function () 
-          self:processResult(context, callback, buffer, {context = self, info = self.info, response_time = exec_time, status_code = res.statusCode}) end)
+          self.logger:debug('WebRequestDataSource:fetch() - Got response as', { headers = res.headers, status_code = res.statusCode, body = buffer })
+          self:processResult(context, callback, buffer, {context = self, info = self.info, response_time = exec_time, status_code = res.statusCode, max_redirects_reached = res.max_redirects_reached}) end)
         if not success then
           self:emit('error', error)
         end
@@ -1409,7 +1602,8 @@ function WebRequestDataSource:fetch(context, callback, params)
         local exec_time = hrtime() - start_time
         buffer = buffer .. data
         if not self.wait_for_end then
-          self:processResult(context, callback, buffer, {context = self, info = self.info, response_time = exec_time, status_code = res.statusCode})
+          self.logger:debug('WebRequestDataSource:fetch() - Got response as', { headers = res.headers, status_code = res.statusCode, body = buffer } )
+          self:processResult(context, callback, buffer, {context = self, info = self.info, response_time = exec_time, status_code = res.statusCode, max_redirects_reached = max_redirects_reached})
           res:destroy()
         end
       end)
@@ -1438,23 +1632,50 @@ function WebRequestDataSource:fetch(context, callback, params)
     options.headers['Content-Length'] = #body
   end
 
-  local req
-  if options.protocol == 'https' then
-    req = https.request(options, success)
-  else
-    req = http.request(options, success)
-  end
+  local max_redirects = self.max_redirects or 5
+  local request
+  request = function (options, callback, max_redirects)
+    local handleResponse = function (res)
+      if self.follow_redirects and isHttpRedirect(res.statusCode) then
+        if max_redirects > 0 then
+          local location = res.headers.location
+          local location_opts = _url.parse(location)
+          local opts = {}
+          opts.method = options.method
+          opts.data = options.data
+          opts.headers  = options.headers
+          opts = merge(opts, location_opts)
+          self.logger:debug('WebRequestDataSource:fetch() - Redirecting to', location) 
+          request(opts, callback, max_redirects - 1)  -- Redirect to new url and maintain request options.
+        else
+          self.logger:debug('WebRequestDataSource:fetch() - Max redirects reached!', self.max_redirects)
+          self:emit('error', 'Max redirects reached!')
+          res.max_redirects_reached = true
+          callback(res)
+        end
+      else
+        callback(res)
+      end
+    end
+    options.protocol = notEmpty(options.protocol, 'http')
+    local service = string.lower(options.protocol) == 'https' and https or http 
+    self.logger:debug('WebRequestDataSource:fetch() - Sending an HTTP/HTTPS request using', options)
+    local req = service.request(options, handleResponse)
 
-  if body and #body > 0 then
-    req:write(body)
-  end
+    if body and #body > 0 then
+      self.logger:debug('WebRequestDataSource:fetch() - Sending data inside body as', body)
+      req:write(body)
+    end
 
-  req:propagate('error', self, function (err)
-    err.context = self
-    err.params = params
-    return err
-  end)
-  req:done()
+    req:propagate('error', self, function (err)
+      --err.context = self
+      --err.params = params
+      err = err .. "(" .. options.host  .. ":" ..  options.port .. ")"
+      return err
+    end)
+    req:done()
+  end
+  request(options, success, self.max_redirects)
 end
 
 --- RandomDataSource class returns a random number each time it get called.
@@ -1524,7 +1745,7 @@ function CommandOutputDataSource:fetch(context, callback, parser, params)
       end
 
       if not self:isSuccess(code) then
-        self:emit('error', {message = 'Command terminated with exitcode \'' .. code .. '\' and message \'' .. string.gsub(output, '\n', ' ') .. '\''})
+        self:emit('error', {message = 'Command terminated with exitcode \'' .. code .. '\' and message \'' .. string.gsub(output, '\r?\n', ' ') .. '\''})
         if not self.callback_on_errors then
           return
         end
