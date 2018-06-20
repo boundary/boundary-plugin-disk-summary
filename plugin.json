@@ -1,6 +1,6 @@
 {
-  "name" : "Boundary Disk Summary",
-  "version" : "0.9.1",
+  "name" : "Truesight Pulse Disk Summary Plugin",
+  "version" : "0.9.2",
   "meterVersionRequired" : "4.2.0-611",
   "unsupportedPlatforms" : [ ],
   "tags" : "disk,meter",
